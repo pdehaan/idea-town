@@ -1,8 +1,4 @@
-// vendor imports
-// check out the gulpfile to see how this happens!
-
-@import '../vendor/normalize.css/normalize';
-@import '../vendor/mozilla-tabzilla/css/tabzilla';
+@import 'vendor';
 
 @import 'variables';
 @import 'mixins';
@@ -10,4 +6,3 @@
 @import 'layout';
 @import 'theme';
 @import 'modules/modules';
-

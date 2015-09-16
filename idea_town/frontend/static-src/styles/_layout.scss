@@ -27,12 +27,12 @@
 
   &-null {
     @extend .wrapper;
+
     padding: 0;
   }
 }
 
 .row {
-
   @include clear-fix;
 
   @include respond-to('med-large') {
@@ -46,7 +46,7 @@
 
   @include respond-to('med-large') {
     float: left;
-    margin: 10px;  
+    margin: 10px;
     width: 229px;
   }
 

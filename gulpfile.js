@@ -1,5 +1,6 @@
 const autoprefixer = require('gulp-autoprefixer');
 const babelify = require('babelify');
+const base64 = require('gulp-base64');
 const bourbon = require('node-bourbon');
 const browserify = require('browserify');
 const buffer = require('vinyl-buffer');
@@ -14,11 +15,13 @@ const gutil = require('gulp-util');
 const imagemin = require('gulp-imagemin');
 const minifycss = require('gulp-minify-css');
 const neat = require('node-neat');
+const normalize = require('node-normalize-scss');
 const rename = require('gulp-rename');
 const runSequence = require('run-sequence');
 const sass = require('gulp-sass');
 const source = require('vinyl-source-stream');
 const sourcemaps = require('gulp-sourcemaps');
+const tabzilla = require('mozilla-tabzilla');
 const through = require('through2');
 const uglify = require('gulp-uglify');
 
@@ -27,12 +30,6 @@ const IS_DEBUG = true;
 
 const SRC_PATH = './idea_town/frontend/static-src/';
 const DEST_PATH = './idea_town/frontend/static/';
-
-// HACK: Under Docker, the node_modules install has been moved.
-// So, look for the vendor assets there. Otherwise, look in current dir
-const NODE_MODULES_PATH = ('NODE_PATH' in process.env) ?
-    process.env.NODE_PATH.split(':')[0] :
-    './node_modules/';
 
 function lintTask() {
   return gulp.src(['*.js', SRC_PATH + 'app/**/*.js'])
@@ -55,31 +52,10 @@ gulp.task('clean', function cleanTask(done) {
   ], done);
 });
 
-gulp.task('npm:tabzilla:img', function npmTabzillaImgTask() {
-  return gulp.src(NODE_MODULES_PATH + 'mozilla-tabzilla/media/**')
-    .pipe(gulp.dest(DEST_PATH + 'vendor/mozilla-tabzilla/media/'));
-});
-
-// Copy the tabzilla assets into the src dir for inclusion in minimization
-gulp.task('npm:tabzilla:css', function npmTabzillaCssTask() {
-  return gulp.src(NODE_MODULES_PATH + 'mozilla-tabzilla/css/tabzilla.css')
-    .pipe(rename('mozilla-tabzilla/css/tabzilla.scss'))
-    .pipe(gulp.dest(SRC_PATH + 'vendor/'));
-});
-
-// Copy the normalize assets into the src dir for inclusion in minimization
-gulp.task('npm:normalize', function npmNormalizeTask() {
-  return gulp.src(NODE_MODULES_PATH + 'normalize.css/normalize.css')
-    .pipe(rename('normalize.css/normalize.scss'))
-    .pipe(gulp.dest(SRC_PATH + 'vendor/'));
-});
-
-gulp.task('vendor', function vendorTask(done) {
-  return runSequence([
-    'npm:tabzilla:img',
-    'npm:tabzilla:css',
-    'npm:normalize'
-  ], done);
+gulp.task('tabzilla-base64', function tabzillaInlineImageTask() {
+  return gulp.src(tabzilla.includePaths + '/_tabzilla.scss')
+    .pipe(base64())
+    .pipe(gulp.dest(tabzilla.includePaths));
 });
 
 // based on https://github.com/gulpjs/gulp/blob/master/docs/recipes/browserify-with-globs.md,
@@ -114,10 +90,10 @@ gulp.task('scripts', function scriptsTask() {
   return bundledStream;
 });
 
-gulp.task('styles', function stylesTask() {
+gulp.task('styles', ['tabzilla-base64'], function stylesTask() {
   return gulp.src(SRC_PATH + 'styles/**/*.scss')
     .pipe(sass({
-      includePaths: bourbon.with(neat.includePaths)
+      includePaths: [normalize.includePaths, tabzilla.includePaths, bourbon.includePaths, neat.includePaths]
     }).on('error', sass.logError))
     .pipe(autoprefixer('last 2 versions'))
     .pipe(gulp.dest(DEST_PATH + 'styles'))
@@ -136,7 +112,6 @@ gulp.task('images', function imagesTask() {
 gulp.task('build', function buildTask(done) {
   runSequence(
     'clean',
-    'vendor',
     'scripts',
     'styles',
     'images',
