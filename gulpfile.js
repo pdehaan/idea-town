@@ -18,6 +18,7 @@ require('./frontend/tasks/pages');
 require('./frontend/tasks/server');
 require('./frontend/tasks/dist');
 require('./frontend/tasks/django');
+require('./frontend/tasks/yaml-lint');
 
 gulp.task('clean', () => del([
   config.DEST_PATH,
